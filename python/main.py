@@ -13,7 +13,7 @@ from queue import Queue
 
 from ThreadedStream import ThreadedStream
 from ThreadedUploader import ThreadedUploader
-from DatabaseUpdater import DatabaseUpdater
+from DatabaseController import DatabaseController
 
 # environments
 
@@ -55,7 +55,7 @@ print(streams)
 stream = streams[0]
 capture = ThreadedStream(stream.url, skip_frame=SKIP_FRAME).start()
 uploader = ThreadedUploader().start()
-db_updater = DatabaseUpdater()
+db_updater = DatabaseController()
 db_updater.updateJobState(uuid, src, "running")
 job_id = db_updater.getJobID(uuid, src)
 

@@ -2,7 +2,7 @@ from dotenv import dotenv_values
 import pymysql
 import sys
 
-class DatabaseUpdater:
+class DatabaseController:
 	conn = None
 
 	def __init__(self):

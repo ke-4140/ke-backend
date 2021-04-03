@@ -49,6 +49,9 @@ class IndexController extends Controller {
         $response['status'] = 0;
         $response['message'] = "Job Created";
         $response['data'] = $job;
+        if (config('app.debug') == true) {
+            $response['command'] = $command;
+        }
         return response()->json($response, Response::HTTP_CREATED);
     }
 
