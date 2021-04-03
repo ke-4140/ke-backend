@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\IndexController;
+use App\Http\Controllers\ImageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,3 +19,5 @@ use App\Http\Controllers\IndexController;
 
 Route::post('job', [IndexController::class, 'newJob']);
 Route::get('job', [IndexController::class, 'getJob']);
+
+Route::get('image', [ImageController::class, 'getImage']);

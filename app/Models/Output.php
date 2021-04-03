@@ -39,4 +39,15 @@ class Output extends Model {
 
         return $outputs;
     }
+
+    // -------------------------------------------------------------------------------
+
+    public static function getRecord($jobID, $image_name){
+
+        $output = self::where('job_id', $jobID)
+            ->where('img_addr', $image_name)
+            ->first();
+
+        return $output;
+    }
 }
