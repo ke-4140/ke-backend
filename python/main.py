@@ -31,7 +31,7 @@ src = sys.argv[2]
 
 def optimizeFrame(frame):
     frame = imutils.resize(frame, width=320)
-    frame = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     return frame
 
 def displayFrame(frame):
@@ -66,18 +66,18 @@ prev_frame = None
 start_time = time.time()
 
 while capture.hasMore():
-    curr_frame = capture.read()
+    raw_frame = capture.read()
     my_counter += 1
     
     # first frame break
     if prev_frame is None:
-        prev_frame = optimizeFrame(curr_frame)
+        prev_frame = optimizeFrame(raw_frame)
         # displayFrame(prev_frame)
         continue
     
     # process
     start_processing = cv2.getTickCount() 
-    curr_frame = optimizeFrame(curr_frame)
+    curr_frame = optimizeFrame(raw_frame)
     mean_ssim = ssim(prev_frame, curr_frame)
     end_processing = cv2.getTickCount()
     processing_time = cv2.getTickFrequency() / (end_processing - start_processing);
@@ -100,7 +100,7 @@ while capture.hasMore():
             "queue_size": queue_size,
             "fps": fps,
         }
-        uploader.put(curr_frame, attr)
+        uploader.put(raw_frame, attr)
         solution_count += 1
         print(solution_count)
         pass
