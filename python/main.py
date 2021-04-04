@@ -40,77 +40,95 @@ def displayFrame(frame):
     plt.axis('off')
     plt.show()
 
+db_controller = DatabaseController()
+def main():
+    # open video stream
 
-# open video stream
+    # CSCI2100
+    # url = "https://youtu.be/MZ16A6X9pG4"
+    # UGEA2100
+    # url = "https://www.youtube.com/watch?v=6FJOIxaD4z0"
+    url = src
+    video = pafy.new(url)
+    streams = video.streams
+    print(streams)
 
-# CSCI2100
-# url = "https://youtu.be/MZ16A6X9pG4"
-# UGEA2100
-# url = "https://www.youtube.com/watch?v=6FJOIxaD4z0"
-url = src
-video = pafy.new(url)
-streams = video.streams
-print(streams)
-
-stream = streams[0]
-capture = ThreadedStream(stream.url, skip_frame=SKIP_FRAME).start()
-uploader = ThreadedUploader().start()
-db_updater = DatabaseController()
-db_updater.updateJobState(uuid, src, "running")
-job_id = db_updater.getJobID(uuid, src)
-
-my_counter = 0
-solution_count = 0
-prev_frame = None
-
-start_time = time.time()
-
-while capture.hasMore():
-    raw_frame = capture.read()
-    my_counter += 1
+    stream = streams[0]
+    capture = ThreadedStream(stream.url, skip_frame=SKIP_FRAME).start()
+    uploader = ThreadedUploader().start()
     
-    # first frame break
-    if prev_frame is None:
-        prev_frame = optimizeFrame(raw_frame)
-        # displayFrame(prev_frame)
-        continue
-    
-    # process
-    start_processing = cv2.getTickCount() 
-    curr_frame = optimizeFrame(raw_frame)
-    mean_ssim = ssim(prev_frame, curr_frame)
-    end_processing = cv2.getTickCount()
-    processing_time = cv2.getTickFrequency() / (end_processing - start_processing);
+    db_controller.updateJobState(uuid, src, "running")
+    db_controller.updateJobAttr(uuid, src, {
+        'viewcount': video.viewcount,
+        'duration': video.duration,
+        'length': video.length,
+        'title': video.title,
+    })
+    job_id = db_controller.getJobID(uuid, src)
 
-    # stat
-    vid_time = int(my_counter*SKIP_FRAME/30)
-    frame_no = my_counter*SKIP_FRAME
-    queue_size = capture.getSize()
-    fps = processing_time
-    print("vid time: %d, frame %d, ssim %f, fps %f, queue size: %d       " % \
-          (vid_time, frame_no, mean_ssim, fps, queue_size), end='\r')
-    
-    if mean_ssim < DIFF_THRESH:
-        # displayFrame(curr_frame)
-        attr = {
-            "job_id": job_id,
-            "vid_time": vid_time,
-            "frame_no": frame_no,
-            "ssim": mean_ssim,
-            "queue_size": queue_size,
-            "fps": fps,
-        }
-        uploader.put(raw_frame, attr)
-        solution_count += 1
-        print(solution_count)
-        pass
+    my_counter = 0
+    solution_count = 0
+    prev_frame = None
+
+    start_time = time.time()
+
+    while capture.hasMore():
+        raw_frame = capture.read()
+        my_counter += 1
         
-    prev_frame = curr_frame
-    
-print()
-print("Done")
-db_updater.updateJobState(uuid, src, "finished")
+        # first frame break
+        if prev_frame is None:
+            prev_frame = optimizeFrame(raw_frame)
+            # displayFrame(prev_frame)
+            continue
+        
+        # process
+        start_processing = cv2.getTickCount() 
+        curr_frame = optimizeFrame(raw_frame)
+        mean_ssim = ssim(prev_frame, curr_frame)
+        end_processing = cv2.getTickCount()
+        processing_time = cv2.getTickFrequency() / (end_processing - start_processing);
 
-end_time = time.time()
-elapsed = end_time - start_time
-print("Elapsed: %d seconds" % (elapsed))
+        # stat
+        vid_time = int(my_counter*SKIP_FRAME/30)
+        frame_no = my_counter*SKIP_FRAME
+        queue_size = capture.getSize()
+        fps = processing_time
+        print("vid time: %d, frame %d, ssim %f, fps %f, queue size: %d       " % \
+            (vid_time, frame_no, mean_ssim, fps, queue_size), end='\r')
+        
+        if mean_ssim < DIFF_THRESH:
+            # displayFrame(curr_frame)
+            attr = {
+                "job_id": job_id,
+                "vid_time": vid_time,
+                "frame_no": frame_no,
+                "ssim": mean_ssim,
+                "queue_size": queue_size,
+                "fps": fps,
+            }
+            uploader.put(raw_frame, attr)
+            solution_count += 1
+            print(solution_count)
+            pass
+            
+        prev_frame = curr_frame
+        
+    print()
+    print("Done")
+    db_controller.updateJobState(uuid, src, "finished")
+
+    end_time = time.time()
+    elapsed = end_time - start_time
+    print("Elapsed: %d seconds" % (elapsed))
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        db_controller.updateJobState(uuid, src, "interrupted")
+        sys.exit(0)
+    except Exception as e:
+        db_controller.updateJobState(uuid, src, "error")
+        db_controller.updateJobAttr(uuid, src, {"error": str(e)})
+        sys.exit(0)

@@ -2,6 +2,8 @@ from dotenv import dotenv_values
 import pymysql
 import sys
 
+import json
+
 class DatabaseController:
 	conn = None
 
@@ -56,6 +58,20 @@ class DatabaseController:
 				if affected_rows < 1:
 					print("Job not found")
 					sys.exit()
+			self.conn.commit()
+
+	def updateJobAttr(self, uuid, src, attr_array):
+		json_string = json.dumps(attr_array)
+
+		self.conn.ping(reconnect=True)
+		with self.conn:
+			with self.conn.cursor() as cursor:
+
+				query = """ update jobs
+					set `attributes`=%s, `updated_at`=NOW()
+					where owner=%s and src=%s
+				"""
+				affected_rows = cursor.execute(query, (json_string, uuid, src))
 			self.conn.commit()
 
 	def insertOutput(self, job_id, vid_time, frame_no, ssim, img_addr):
