@@ -5,9 +5,6 @@ import pafy
 import cv2
 
 def getFrame(url, frame_no):
-    
-    url = "https://www.youtube.com/watch?v=Bqyw52tO7To"
-
     video = pafy.new(url)
     streams = video.streams
     
@@ -26,7 +23,7 @@ def getFrame(url, frame_no):
 
 if __name__ == '__main__':
 	if len(sys.argv) != 3:
-		print("Usage: getFrame.py src frame_no")
+		print("Usage: getFrame.py url frame_no")
 		exit(0)
 
 	src = sys.argv[1]

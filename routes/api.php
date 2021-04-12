@@ -23,3 +23,5 @@ Route::get('job', [IndexController::class, 'getJob']);
 Route::get('image', [ImageController::class, 'getImage']);
 
 Route::get('frame', [ImageController::class, 'getFrame']);
+
+Route::get('transcript', [IndexController::class, 'getTranscript']);

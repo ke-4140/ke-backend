@@ -98,4 +98,80 @@ class IndexController extends Controller {
         $response['data']['outputs'] = $outputs;
         return response()->json($response);
     }
+
+    // -------------------------------------------------------------------------------
+
+    public function getTranscript(Request $request) {
+
+        $response = [
+            "timestamp" => Date("YmdHis"),
+			"api" => __FUNCTION__,
+			"status" => -99,
+			"message" => "Unexpected error"
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'src' => 'required|min:11',
+            'timestamps' => 'json',
+        ]);
+
+        $errors = $validator->errors();
+        if (count($errors) > 0) {
+            $response['status'] = -80;
+            $response['message'] = "Input Validation Failed";
+            $response['data'] = $errors;
+            return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $src = $request->src;
+
+        $command = escapeshellcmd("python3 ./python/getTranscript.py " .$src);
+        $result = null;
+        exec("cd ../ && bash -c \"$command\"", $result, $code);
+
+        $transcriptArray = json_decode($result[0], true);
+
+        if ($request->has('timestamps')) {
+
+            $timestamps_json = $request->timestamps;
+            $timestamps = json_decode($timestamps_json, true);
+            $timestamps[] = PHP_INT_MAX;
+
+            $newTranscript = array();
+            $item = [];
+            $item['start'] = $timestamps[0];
+            $item['text'] = '';
+            $item['duration'] = 0;
+            $timestampIndex = 0;
+
+            // group transcripts together
+            foreach ($transcriptArray as $rawItem) {
+
+                // repeat until item start is in range
+                while (!($rawItem['start'] >= $timestamps[$timestampIndex]
+                 && $rawItem['start'] <= $timestamps[$timestampIndex + 1])) {
+
+                    $newTranscript[] = $item;
+                    $timestampIndex++;
+                    $item['start'] = $timestamps[$timestampIndex];
+                    $item['text'] = '';
+                    $item['duration'] = 0;
+                    if ($timestampIndex >= count($timestamps)) { break; }
+                }
+                
+                $item['text'] .= $rawItem['text'] ." ";
+                $item['duration'] += $rawItem['duration'];
+                if ($timestampIndex >= count($timestamps)) { break; }
+            }
+            // push the last one as well
+            $newTranscript[] = $item;
+            // replace the output
+            $transcriptArray = $newTranscript;
+        }
+
+        $response['status'] = 0;
+        $response['message'] = "OK";
+        $response['data'] = $transcriptArray;
+        return response()->json($response);
+    }
 }
