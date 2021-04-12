@@ -26,8 +26,6 @@ class ImageController extends Controller {
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|min:3',
-            'uuid' => 'required|min:3',
-            'src' => 'required|min:3',
         ]);
 
         $errors = $validator->errors();
@@ -38,19 +36,9 @@ class ImageController extends Controller {
             return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $uuid = $request->uuid;
         $name = $request->name;
-        $src = $request->src;
 
-        $job = Job::getJob($uuid, $src);
-        if (empty($job)) {
-            $response['status'] = -10;
-            $response['message'] = "Job not found";
-            return response()->json($response, Response::HTTP_NOT_FOUND);
-        }
-
-        $jobID = $job->id;
-        $outputRecord = Output::getRecord($jobID, $name);
+        $outputRecord = Output::getRecordByName($name);
         if (empty($outputRecord)) {
             $response['status'] = -10;
             $response['message'] = "Unauthroized Access";

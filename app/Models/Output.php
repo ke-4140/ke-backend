@@ -50,4 +50,14 @@ class Output extends Model {
 
         return $output;
     }
+
+    // -------------------------------------------------------------------------------
+
+    public static function getRecordByName($image_name){
+
+        $output = self::where('img_addr', $image_name)
+            ->first();
+
+        return $output;
+    }
 }
